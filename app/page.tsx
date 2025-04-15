@@ -50,7 +50,33 @@ export default function Home() {
         rows={data ? 1 : 20}
         hidden={json.length > 200000}
         onInput={(e) => setJson(e.currentTarget.value)}
-        placeholder="Paste your report here"
+        placeholder="Paste your report here, or drag and drop a file"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.currentTarget.classList.add("border-blue-500");
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.currentTarget.classList.remove("border-blue-500");
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.currentTarget.classList.remove("border-blue-500");
+          
+          const file = e.dataTransfer.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              if (event.target?.result) {
+                setJson(event.target.result as string);
+              }
+            };
+            reader.readAsText(file);
+          }
+        }}
       ></textarea>
 
       {data && <Report report={data} repo={repo} />}
