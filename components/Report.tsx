@@ -84,6 +84,8 @@ function getSeverityClass(severity: string) {
       return "bg-red-400 text-white";
     case "Critical":
       return "bg-red-500 text-white";
+    default:
+      return "bg-gray-400";
   }
 }
 
@@ -113,135 +115,184 @@ export function Report({ report, repo }: Props) {
   }, [vulnsCount]);
 
   return (
-    <div>
-      <details className="sticky top-0 bg-slate-100 z-10 dark:bg-slate-800">
-        <summary className="cursor-pointer">Filters</summary>
-        <div className="flex border-2 rounded">
-          <div className="flex p-2 border-r">
-            <label>Severity: </label>
+    <div className="mb-12">
+      <div className="sticky top-0 bg-white dark:bg-slate-900 shadow-md rounded-lg p-4 mb-6 z-10">
+        <div className="mb-2 flex justify-between items-center">
+          <h2 className="text-xl font-bold">Filters</h2>
+          <div className="text-sm text-slate-600 dark:text-slate-300">
+            Found <span className="font-semibold">{vulnerabilities?.length}</span> vulnerabilities
+          </div>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <label className="text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Severity</label>
             <select
               onInput={(e) => setSeverity(e.currentTarget.value)}
-              className="bg-transparent px-2"
+              className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select severity</option>
+              <option value="">All severities</option>
               <option value="Critical">Critical</option>
               <option value="High">High</option>
               <option value="Medium">Medium</option>
               <option value="Low">Low</option>
             </select>
           </div>
-          <div className="flex p-2 border-r">
-            <label>Subdirectory: </label>
+          <div className="flex flex-col">
+            <label className="text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Subdirectory</label>
             <input
-              className="bg-transparent px-2"
+              className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="e.g. nextapp"
+              value={subdir}
               onInput={(e) => setSubdir(e.currentTarget.value)}
             />
           </div>
         </div>
-      </details>
-      <div className="rounded p-4  border-slate-200 border-2 mt-4 mb-10 dark:border-slate-600">
-        <h2>Results</h2>
-        <div className="text-slate-500">
-          Versions: Report {report.version} / Analyzer{" "}
-          {report.scan.analyzer.name} {report.scan.analyzer.version} / Scanner{" "}
-          {report.scan.scanner.name} {report.scan.scanner.version}
-        </div>
-        <div className="text-slate-500">
-          Status: {report.scan.status} / Vulnerabilities:{" "}
-          {vulnerabilities?.length}
-        </div>
+      </div>
 
-        {vulnerabilities?.slice(pageStart, pageEnd)?.map((item) => (
-          <details
-            key={item.id + item.incrementId}
-            className="border-t-2 py-4 group"
-          >
-            <summary className="relative pr-2 cursor-pointer flex hide-arrow after:content-['▼'] after:block after:absolute after:right-2 after:transition-transform after:origin-center group-open:after:rotate-180">
-              <h3 className="text-lg font-semibold inline-block text-slate-800 dark:text-slate-100">
-                <span
-                  className={`p-1 rounded mr-2 px-4 ${getSeverityClass(
-                    item.severity
-                  )}`}
-                >
-                  {item.severity}
-                </span>{" "}
-                {item.name}
-              </h3>
-            </summary>
-            <div className="mt-1 dark:text-slate-300">
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  a: ({ node, ...props }) => (
-                    <a
-                      {...props}
-                      className="text-blue-600 underline hover:text-blue-800 dark:hover:text-blue-500"
-                    />
-                  ),
-                  ul: ({ node, ...props }) => (
-                    <ul {...props} className="list-disc pl-6 my-2" />
-                  ),
-                  p: ({ node, ...props }) => <p {...props} className="my-2" />,
-                }}
-              >
-                {item.description}
-              </Markdown>
-
-              <h4 className="text-md font-semibold inline-block text-slate-800 dark:text-slate-300">
-                Identifiers
-              </h4>
-
-              <ul className="list-disc pl-6 my-2">
-                {item.identifiers.map((item) => (
-                  <li key={`${item.type}.${item.name}`}>
-                    {item.url ? (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        className="text-blue-600 underline hover:text-blue-800 dark:hover:text-blue-500"
-                      >
-                        {item.name}
-                      </a>
-                    ) : (
-                      item.name
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="mt-1">
-              Source:{" "}
-              <a
-                href={getUrl(repo, item.location)}
-                className="text-blue-600 underline hover:text-blue-800 dark:hover:text-blue-500"
-                target="_blank"
-              >
-                Open {item.location.file}:{item.location.start_line}
-                {item.location.end_line ? `-${item.location.end_line}` : ""}
-              </a>
-            </p>
-          </details>
-        ))}
-
-        <div className="flex justify-end">
-          <button
-            className="inline-block w-8 h-8 border-2 rounded-l"
-            onClick={() => setPage((p) => Math.max(p - 1, 1))}
-          >
-            &lt;
-          </button>
-          <span className="inline-block h-8 border-2 border-x-0 p-1">
-            {page} / {pages}
-          </span>
-          <button
-            className="inline-block w-8 h-8 border-2 rounded-r"
-            onClick={() => setPage((p) => Math.min(p + 1, pages))}
-          >
-            &gt;
-          </button>
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-200">Report Details</h2>
+        <div className="grid md:grid-cols-2 gap-4 text-sm text-slate-600 dark:text-slate-400 mb-4">
+          <div>
+            <p><span className="font-medium">Report Version:</span> {report.version || "N/A"}</p>
+            <p><span className="font-medium">Status:</span> {report.scan.status}</p>
+          </div>
+          <div>
+            <p><span className="font-medium">Analyzer:</span> {report.scan.analyzer.name} {report.scan.analyzer.version}</p>
+            <p><span className="font-medium">Scanner:</span> {report.scan.scanner.name} {report.scan.scanner.version}</p>
+          </div>
         </div>
       </div>
+
+      {vulnerabilities && vulnerabilities.length > 0 ? (
+        <div className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900 rounded-lg shadow-md overflow-hidden">
+          {vulnerabilities.slice(pageStart, pageEnd)?.map((item) => (
+            <details
+              key={item.id + item.incrementId}
+              className="group"
+            >
+              <summary className="relative p-4 cursor-pointer flex hide-arrow after:content-['▼'] after:block after:absolute after:right-4 after:top-1/2 after:-translate-y-1/2 after:text-sm after:text-slate-500 after:transition-transform after:origin-center group-open:after:rotate-180 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <div className="flex-1">
+                  <div className="flex items-center mb-1">
+                    <span
+                      className={`text-sm font-medium rounded-full px-3 py-0.5 ${getSeverityClass(
+                        item.severity
+                      )}`}
+                    >
+                      {item.severity}
+                    </span>
+                    <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                      {item.category}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                    {item.name}
+                  </h3>
+                </div>
+              </summary>
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                <div className="prose prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+                  <Markdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({ node, ...props }) => (
+                        <a
+                          {...props}
+                          className="text-blue-600 underline hover:text-blue-800 dark:hover:text-blue-500"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul {...props} className="list-disc pl-6 my-2" />
+                      ),
+                      p: ({ node, ...props }) => <p {...props} className="my-2" />,
+                    }}
+                  >
+                    {item.description}
+                  </Markdown>
+                </div>
+
+                <div className="mt-4">
+                  <h4 className="text-md font-semibold mb-2 text-slate-800 dark:text-slate-300">
+                    Identifiers
+                  </h4>
+
+                  <ul className="list-disc pl-6 mb-4 text-slate-700 dark:text-slate-300">
+                    {item.identifiers.map((id) => (
+                      <li key={`${id.type}.${id.name}`} className="mb-1">
+                        {id.url ? (
+                          <a
+                            href={id.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800 dark:hover:text-blue-500"
+                          >
+                            {id.name}
+                          </a>
+                        ) : (
+                          <span>{id.name}</span>
+                        )}
+                        <span className="text-xs text-slate-500 ml-1">({id.type})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <p className="flex items-center text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <a
+                      href={getUrl(repo, item.location)}
+                      className="text-blue-600 font-medium hover:text-blue-800 dark:hover:text-blue-500"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {item.location.file}:{item.location.start_line}
+                      {item.location.end_line ? `-${item.location.end_line}` : ""}
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md p-6 text-center">
+          <p className="text-slate-600 dark:text-slate-400">No vulnerabilities found matching the current filters.</p>
+        </div>
+      )}
+
+      {paginationEnabled && (
+        <div className="flex justify-between items-center mt-6">
+          <div className="text-sm text-slate-500">
+            Showing {pageStart + 1}-{Math.min(pageEnd, vulnsCount)} of {vulnsCount} results
+          </div>
+          <div className="flex items-center">
+            <button
+              className="flex items-center justify-center w-9 h-9 rounded-l-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              aria-label="Previous page"
+            >
+              &lt;
+            </button>
+            <div className="flex items-center justify-center px-3 h-9 border-t border-b border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              {page} / {pages}
+            </div>
+            <button
+              className="flex items-center justify-center w-9 h-9 rounded-r-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setPage((p) => Math.min(p + 1, pages))}
+              disabled={page === pages}
+              aria-label="Next page"
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
